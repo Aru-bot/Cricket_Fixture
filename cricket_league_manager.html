@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket League Fixture Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --body-bg: linear-gradient(135deg, #f8f9ff 0%, #dee6ff 100%);
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #1f2937;
+            --card-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --match-day-bg: #e9ecef;
+            --btn-primary-bg: linear-gradient(45deg, #28a745, #20c997);
+            --btn-primary-color: #ffffff;
+            --btn-outline-border: #6c757d;
+        }
+        .dark-theme {
+            --body-bg: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            --container-bg: rgba(15, 23, 42, 0.95);
+            --text-color: #f8fafc;
+            --card-bg: #1f2937;
+            --border-color: #334155;
+            --match-day-bg: #283046;
+            --btn-primary-bg: linear-gradient(45deg, #0ea5e9, #2563eb);
+            --btn-primary-color: #ffffff;
+            --btn-outline-border: #94a3b8;
+        }
+        body {
+            background: var(--body-bg);
+            color: var(--text-color);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+        .container {
+            background: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            padding: 40px;
+            margin-top: 50px;
+        }
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-generate {
+            background: var(--btn-primary-bg);
+            border: none;
+            color: var(--btn-primary-color);
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-theme {
+            border-color: var(--btn-outline-border);
+            color: var(--text-color);
+        }
+        .fixture-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .match-day {
+            background: var(--match-day-bg);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏏 Cricket League Fixture Generator</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="numTeams" class="form-label">Number of Teams:</label>
+                    <input type="number" class="form-control" id="numTeams" min="1" value="4">
+                </div>
+                <button id="generateTeams" class="btn btn-primary">Generate Team Input Fields</button>
+            </div>
+            <div class="col-md-6">
+                <div id="teamInputs"></div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <button id="generateFixtures" class="btn btn-generate">Generate Fixtures</button>
+        </div>
+        
+        <div id="fixtures" class="mt-5"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('generateTeams').addEventListener('click', function() {
+            const numTeams = parseInt(document.getElementById('numTeams').value);
+            const teamInputs = document.getElementById('teamInputs');
+            teamInputs.innerHTML = '';
+            
+            for (let i = 1; i <= numTeams; i++) {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'form-group';
+                inputGroup.innerHTML = `
+                    <label for="team${i}" class="form-label">Team ${i} Name:</label>
+                    <input type="text" class="form-control" id="team${i}" placeholder="Enter team name">
+                `;
+                teamInputs.appendChild(inputGroup);
+            }
+        });
+
+        document.getElementById('generateFixtures').addEventListener('click', function() {
+            const numTeams = parseInt(document.getElementById('numTeams').value);
+            const teams = [];
+            
+            for (let i = 1; i <= numTeams; i++) {
+                const teamName = document.getElementById(`team${i}`).value.trim();
+                if (teamName) {
+                    teams.push(teamName);
+                }
+            }
+            
+            if (teams.length < 2) {
+                alert('Please enter at least 2 team names to generate fixtures.');
+                return;
+            }
+            
+            const fixtures = generateRoundRobinFixtures(teams);
+            displayFixtures(fixtures);
+        });
+
+        function generateRoundRobinFixtures(teams) {
+            const fixtures = [];
+            const numTeams = teams.length;
+            const rounds = numTeams - 1;
+            
+            for (let round = 0; round < rounds; round++) {
+                const roundFixtures = [];
+                for (let i = 0; i < numTeams / 2; i++) {
+                    const home = teams[i];
+                    const away = teams[numTeams - 1 - i];
+                    roundFixtures.push({ home, away });
+                }
+                fixtures.push(roundFixtures);
+                
+                // Rotate teams
+                const last = teams.pop();
+                teams.splice(1, 0, last);
+            }
+            
+            return fixtures;
+        }
+
+        function displayFixtures(fixtures) {
+            const fixturesDiv = document.getElementById('fixtures');
+            fixturesDiv.innerHTML = '<h2 class="text-center mb-4">Generated Fixtures</h2>';
+            
+            fixtures.forEach((round, index) => {
+                const roundDiv = document.createElement('div');
+                roundDiv.className = 'match-day';
+                roundDiv.innerHTML = `<h4>Round ${index + 1}</h4>`;
+                
+                round.forEach(match => {
+                    const matchCard = document.createElement('div');
+                    matchCard.className = 'fixture-card';
+                    matchCard.innerHTML = `<strong>${match.home}</strong> vs <strong>${match.away}</strong>`;
+                    roundDiv.appendChild(matchCard);
+                });
+                
+                fixturesDiv.appendChild(roundDiv);
+            });
+        }
+
+        // Auto-generate inputs on load
+        document.getElementById('generateTeams').click();
+    </script>
+</body>
+</html>
